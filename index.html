@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ 초간단 & 초달달 MBTI 테스트 ✨</title>
+    <!-- Tailwind CSS (이쁜 디자인을 위한 CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        html { scroll-behavior: smooth; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800 antialiased">
+
+    <!-- 1. 시작 화면 -->
+    <section id="start-page" class="min-h-screen flex flex-col justify-center items-center p-6 text-center gradient-bg text-white">
+        <div class="max-w-md bg-white/10 backdrop-blur-md p-8 rounded-3xl shadow-2xl border border-white/20">
+            <span class="text-6xl mb-4 block animate-bounce">🔮</span>
+            <h1 class="text-3xl font-extrabold mb-3 tracking-tight">과연 나의 진짜 성향은?</h1>
+            <p class="text-indigo-100 mb-8 text-sm leading-relaxed">딱 32개의 상황으로 알아보는 과몰입 방지 재미 보장 MBTI 테스트!</p>
+            <button onclick="startQuiz()" class="w-full bg-white text-indigo-600 font-bold py-4 px-6 rounded-2xl shadow-lg hover:bg-indigo-50 transition-all transform hover:-translate-y-1 active:translate-y-0 text-lg cursor-pointer">
+                테스트 시작하기 🚀
+            </button>
+        </div>
+    </section>
+
+    <!-- 2. 퀴즈 문항 영역 (자바스크립트로 동적 생성됨) -->
+    <main id="quiz-container" class="hidden container mx-auto max-w-xl px-4 py-8 space-y-12"></main>
+
+    <!-- 3. 결과 화면 -->
+    <section id="result-page" class="hidden min-h-screen flex flex-col justify-center items-center p-6 text-center bg-slate-900 text-white">
+        <div class="max-w-md w-full bg-slate-800 p-8 rounded-3xl shadow-2xl border border-slate-700 space-y-6">
+            <p class="text-indigo-400 font-bold tracking-widest text-sm uppercase">당신의 성향 분석 결과</p>
+            <div id="result-emoji" class="text-7xl my-2">👽</div>
+            <h2 id="result-mbti" class="text-5xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-indigo-400">ISFP</h2>
+            <h3 id="result-title" class="text-xl font-bold text-slate-200">"호기심 많은 예술가"</h3>
+            
+            <hr class="border-slate-700">
+            
+            <p id="result-desc" class="text-slate-400 text-sm leading-relaxed text-left bg-slate-850 p-4 rounded-xl"></p>
+            
+            <button onclick="location.reload()" class="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white font-bold py-4 px-6 rounded-2xl shadow-lg transition-all transform hover:-translate-y-1 cursor-pointer">
+                다시 테스트하기 🔄
+            </button>
+        </div>
+    </section>
+
+    <!-- 질문 데이터 및 로직 -->
+    <script>
+        // 32가지 재미있는 문항 데이터 (E/I, S/N, T/F, J/P 각 8문항씩)
+        const questions = [
+            // E vs I (1~8)
+            { type: "EI", q: "주말 아침, 눈을 떴을 때 내 첫 생각은?", a: "오늘 누구 만나서 뭐하지? 😎", b: "이불 속이 제일 안전해... 더 자자 😴" },
+            { type: "EI", q: "친구가 갑자기 '지금 집 앞인데 나올래?' 한다면?", a: "개이득! 바로 옷 갈아입는다 🏃", b: "어우 당황스러워... 없는 척할까? 🤫" },
+            { type: "EI", q: "파티나 모임에서 나는 주로 어느 자리에 있나?", a: "중앙에서 대화를 주도하거나 텐션을 올린다 🎉", b: "구석에서 조용히 마음에 드는 사람 한두 명과 대화한다 🍹" },
+            { type: "EI", q: "스트레스를 풀 때 더 끌리는 방법은?", a: "친구들과 수다 떨며 코인노래방 가기 🎤", b: "조용히 방에서 유튜브 보거나 게임하기 🎮" },
+            { type: "EI", q: "새로운 환경(새 학교/직장)에 첫 출근 했을 때 나는?", a: "옆 사람에게 먼저 말을 걸어 통성명을 한다 👋", b: "상대방이 먼저 말을 걸어줄 때까지 기다린다 🫣" },
+            { type: "EI", q: "오랜만에 엄청 재밌게 놀고 집에 돌아가는 길, 내 기분은?", a: "아쉬워! 에너지 뿜뿜, 더 놀 수 있어! 🔥", b: "즐거웠지만 기 빨렸다... 빨리 집 가서 충전해야지 🔋" },
+            { type: "EI", q: "전화 통화와 카톡 문자 중 내가 선호하는 것은?", a: "답답한 건 못 참아, 그냥 전화해! 📞", b: "생각할 시간이 필요해, 카톡이 편해 💬" },
+            { type: "EI", q: "단체 톡방에서 나는 보통 어떤 역할?", a: "드립 치고 대화를 이끄는 편 💬", b: "눈팅하다가 가끔 하트(공감)만 누르는 편 ❤️" },
+
+            // S vs N (9~16)
+            { type: "SN", q: "하늘에 떠 있는 예쁜 구름을 보면 드는 생각은?", a: "오 날씨 좋다, 구름 이쁘네 ☁️", b: "저 구름은 솜사탕 같아... 무너지면 어떻게 될까? 🦄" },
+            { type: "SN", q: "영화를 볼 때 내가 더 몰입하는 부분은?", a: "배우들의 연기력과 탄탄한 현실성 있는 스토리 🎬", b: "예상치 못한 반전과 가상 세계관의 상상력 🚀" },
+            { type: "SN", q: "친구가 '나 이번에 로또 사려고'라고 한다면?", a: "얼마치 사게? 당첨되면 좋겠다 💰", b: "당첨되면 뭐부터 할 거야? 건물 살 거야? 빌딩 이름은? 🏢" },
+            { type: "SN", q: "요리 레시피를 볼 때 나의 행동은?", a: "그램(g) 수와 시간, 순서를 정확히 지킨다 ⏱️", b: "느낌 아니까~ 눈대중으로 대충 때려 넣는다 🧂" },
+            { type: "SN", q: "멍 때릴 때 내 머릿속 상태는?", a: "말 그대로 진짜 아무 생각도 안 함 😶", b: "과거 반성부터 미래 좀비 아포칼립스 생존 계획까지 세움 🧟" },
+            { type: "SN", q: "설명서를 읽을 때 나는?", a: "처음부터 끝까지 꼼꼼히 읽고 조립한다 🛠️", b: "그림만 대충 보고 직감으로 조립 시작한다 📐" },
+            { type: "SN", q: "노래를 들을 때 내가 가장 먼저 꽂히는 요소는?", a: "리듬, 멜로디, 그리고 가수의 목소리 🎵", b: "가사가 가진 깊은 의미와 감성적 스토리 📝" },
+            { type: "SN", q: "미래에 대한 생각을 할 때 나는?", a: "당장 내년, 혹은 몇 년 뒤의 현실적인 계획 📅", b: "내가 나중에 우주여행을 갈 수 있을까 하는 먼 미래의 상상 🌌" },
+
+            // T vs F (17~24)
+            { type: "TF", q: "친구가 '나 슬퍼서 빵 샀어'라고 한다면 내 대답은?", a: "무슨 빵 샀는데? 맛있는 거야? 🥐", b: "왜 슬퍼? 무슨 일 있었어? 🥺" },
+            { type: "TF", q: "친구가 열심히 준비한 시험에서 떨어졌다고 울 때 나는?", a: "다음에 잘 보면 돼! 근데 어떤 부분에서 과락 난 거야? 🧐", b: "너무 속상하겠다... 고생한 거 내가 다 알아 😭" },
+            { type: "TF", q: "연인이 '나 사고 났어'라고 전화를 했다면 내 첫마디는?", a: "보험은 불렀어? 어디 박았어? 차 많이 망가짐? 🚗", b: "헉 괜찮아?! 안 다쳤어?! 어디 아픈 데는 없어? 💔" },
+            { type: "TF", q: "이야기를 들을 때 내가 더 중요하게 보는 것은?", a: "앞뒤 맥락이 맞는지, 사실 관계가 명확한지 ⚖️", b: "말하는 사람의 감정과 나를 배려하는 태도 🤝" },
+            { type: "TF", q: "영화나 드라마를 보면서 눈물을 흘리는 빈도는?", a: "거의 없음. 슬프긴 한데 눈물까진 안 남 😑", b: "툭하면 과몰입해서 폭풍 오열함 😭" },
+            { type: "TF", q: "친구가 옷을 샀는데 솔직히 별로일 때, 의견을 묻는다면?", a: "음... 네 체형에는 좀 안 어울리는 것 같아 (솔직) 🤐", b: "오 특이하다! 네가 마음에 들면 됐지 뭐! (영혼 가출) ✨" },
+            { type: "TF", q: "칭찬을 들을 때 더 기분 좋은 말은?", a: "너 진짜 일 잘한다, 대박 똑똑해 🧠", b: "너랑 있으면 마음이 너무 편해, 고마워 💗" },
+            { type: "TF", q: "갈등이 생겼을 때 내가 해결하는 방식은?", a: "누가 잘못했는지 논리적으로 따지고 시시비비를 가린다 📑", b: "서로 감정 상하지 않게 대화로 풀고 화해한다 🕊️" },
+
+            // J vs P (25~32)
+            { type: "JP", q: "여행 갈 때 나의 계획표 상태는?", a: "시간별 동선, 맛집 예비 리스트까지 엑셀로 정리 🗺️", b: "비행기 표랑 숙소만 예약하면 끝, 가서 정하자 ✈️" },
+            { type: "JP", q: "방 청소나 정리를 할 때 나는?", a: "물건들이 제자리에 딱딱 각 맞춰 서 있어야 편안 🧹", b: "어차피 또 쓸 건데... 어질러진 속의 규칙이 있음 🗑️" },
+            { type: "JP", q: "약속 시간 직전, 친구가 '갑자기 급한 일 생겨서 못 갈 듯' 한다면?", a: "내 소중한 계획이 틀어지다니... 킹받음 💢", b: "오예! 오히려 좋아, 집에서 개꿀 휴식 🥳" },
+            { type: "JP", q: "과제나 업무를 할 때 내 스타일은?", a: "미리미리 조금씩 계획적으로 끝내 둔다 ⏳", b: "벼락치기가 제맛! 마감 직전 초사이언 모드 가동 🔥" },
+            { type: "JP", q: "배달 음식을 시킬 때 나는?", a: "리뷰 다 분석하고 메뉴 딱 정해서 빠르게 주문 📱", b: "이거 볼까 저거 볼까 한 시간 동안 고민하다 시킴 🍕" },
+            { type: "JP", q: "갑자기 하루 일정이 통째로 비었을 때 나는?", a: "비어버린 시간을 채울 새로운 할 일을 계획한다 📅", b: "계획이 없는 자유를 만끽하며 침대와 물아일체 된다 🛌" },
+            { type: "JP", q: "물건을 사고 영수증이나 가계부를 적는 편인가?", a: "꼼꼼히 기록하거나 소비 계획을 체크한다 🪙", b: "돈은 쓰라고 있는 것... 잔고 보고 깜짝 놀람 💸" },
+            { type: "JP", q: "내 책상 위나 컴퓨터 바탕화면 상태는?", a: "폴더별로 깔끔하게 정리되어 있음 📂", b: "아이콘과 파일들이 가득 차서 어디 있는지 찾아야 함 🖥️" }
+        ];
+
+        // MBTI 결과별 매칭 데이터 (이모지 및 설명)
+        const mbtiResults = {
+            ISTJ: { emoji: "💼", title: "청렴결백한 논리주의자", desc: "매사에 철저하고 규칙을 잘 지키는 현실주의자! 책임감이 강해 믿고 맡길 수 있는 든든한 사람입니다." },
+            ISFJ: { emoji: "🐻", title: "용감한 수호자", desc: "주변 사람들을 따뜻하고 세심하게 챙겨주는 배려왕. 조용하지만 내면은 누구보다 단단합니다." },
+            INFJ: { emoji: "🔮", title: "선의의 옹호자", desc: "풍부한 상상력과 깊은 통찰력을 지닌 신비로운 영혼. 이상적인 세상을 꿈꾸며 사람들에게 울림을 줍니다." },
+            INTJ: { emoji: "🧠", title: "용의주도한 전략가", desc: "철저한 계획과 뛰어난 통찰력으로 세상을 분석하는 천재형. 혼자만의 시간 속에서 거대한 전략을 세웁니다." },
+            ISTP: { emoji: "🛠️", title: "만능 재주꾼", desc: "쿨하고 시크한 현실주의자. 상황 적응력이 뛰어나고 기계를 만지거나 효율적인 해결책을 찾는 데 선수입니다." },
+            ISFP: { emoji: "🎨", title: "호기심 많은 예술가", desc: "말없이 다정하고 따뜻한 감성의 소유자. 삶의 여유와 미적 감각을 즐길 줄 아는 진정한 로맨티시스트입니다." },
+            INFP: { emoji: "🦄", title: "열정적인 중재자", desc: "마음이 따뜻하고 낭만이 넘치는 이상주의자. 나만의 가치관이 뚜렷하며 타인의 아픔에 깊이 공감합니다." },
+            INTP: { emoji: "🧪", title: "논리적인 사색가", desc: "끝없는 호기심과 분석력으로 진리를 탐구하는 지적 탐험가. 독창적인 아이디어와 비판적 사고가 매력적입니다." },
+            ESTP: { emoji: "🏍️", title: "수완 좋은 활동가", desc: "에너지가 넘치고 스릴을 즐기는 행동파! 매 순간을 즐기며, 어떤 트러블이 생겨도 유연하게 해결합니다." },
+            ESFP: { emoji: "🎉", title: "자유로운 영혼의 연예인", desc: "가는 곳마다 분위기를 메이킹하는 우주 최강 인싸! 인생을 축제처럼 즐기며 사람들에게 웃음을 줍니다." },
+            ENFP: { emoji: "✨", title: "재기발랄한 활동가", desc: "긍정 에너지가 뿜뿜하는 아이디어 뱅크! 사람을 좋아하고 자유로운 영혼을 가진 매력 만점 댕댕이 성향입니다." },
+            ENTP: { emoji: "🔥", title: "뜨거운 논쟁을 즐기는 변론가", desc: "두뇌 회전이 빠르고 말발이 장난 아닌 혁신가! 기존의 틀을 깨부수고 새로운 패러다임을 제시하길 좋아합니다." },
+            ESTJ: { emoji: "📢", title: "엄격한 관리자", desc: "명확한 규칙과 효율성을 중요시하는 타고난 리더. 추진력이 어마어마해서 프로젝트를 성공으로 이끕니다." },
+            ESFJ: { emoji: "🍰", title: "사교적인 외교관", desc: "친절함과 리액션의 끝판왕! 주변 분위기를 화목하게 만들고 사람 간의 유대를 끈끈하게 이어주는 징검다리입니다." },
+            ENFJ: { emoji: "☀️", title: "정의로운 사회운동가", desc: "타인의 성장을 돕고 이끄는 카리스마 넘치는 따뜻한 리더. 강한 영향력으로 세상을 더 좋게 만듭니다." },
+            ENTJ: { emoji: "👑", title: "대담한 통솔자", desc: "비전과 전략을 가지고 목표를 향해 직진하는 야망가. 리더십이 뛰어나며 불가능해 보이는 일도 가능하게 만듭니다." }
+        };
+
+        // 점수 저장소
+        let scores = { EI: 0, SN: 0, TF: 0, JP: 0 };
+
+        // 퀴즈 시작 함수
+        function startQuiz() {
+            document.getElementById('start-page').classList.add('hidden');
+            const container = document.getElementById('quiz-container');
+            container.classList.remove('hidden');
+
+            // 문항 생성 및 동적 배치
+            questions.forEach((q, index) => {
+                const card = document.createElement('div');
+                card.id = `q-${index}`;
+                card.className = "bg-white p-8 rounded-3xl shadow-md border border-slate-100 space-y-6 transition-all duration-300";
+                
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="bg-indigo-100 text-indigo-700 font-bold px-3 py-1 rounded-full text-xs">Question ${index + 1}/32</span>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-800 leading-snug">${q.q}</h2>
+                    <div class="grid gap-3">
+                        <button onclick="selectOption(${index}, 'A', '${q.type}')" id="btn-${index}-A" class="w-full text-left p-4 rounded-xl border-2 border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/50 transition-all font-medium text-slate-700 text-sm cursor-pointer">
+                            ${q.a}
+                        </button>
+                        <button onclick="selectOption(${index}, 'B', '${q.type}')" id="btn-${index}-B" class="w-full text-left p-4 rounded-xl border-2 border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/50 transition-all font-medium text-slate-700 text-sm cursor-pointer">
+                            ${q.b}
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // 사용자가 보관할 선택 내역 기록
+        let userAnswers = new Array(32).fill(null);
+
+        // 옵션 선택 시 처리 함수
+        function selectOption(qIdx, option, type) {
+            // 이전에 선택한 버튼 스타일 초기화
+            document.getElementById(`btn-${qIdx}-A`).classList.remove('border-indigo-600', 'bg-indigo-50', 'text-indigo-700');
+            document.getElementById(`btn-${qIdx}-B`).classList.remove('border-indigo-600', 'bg-indigo-50', 'text-indigo-700');
+
+            // 현재 선택한 버튼 하이라이트
+            document.getElementById(`btn-${qIdx}-${option}`).classList.add('border-indigo-600', 'bg-indigo-50', 'text-indigo-700');
+
+            // 답안 기록
+            userAnswers[qIdx] = { option, type };
+
+            // 모든 문항이 체크되었는지 확인
+            if (userAnswers.filter(ans => ans !== null).length === 32) {
+                showResult();
+            } else {
+                // 다음 문항 카드로 부드럽게 스크롤 이동
+                const nextCard = document.getElementById(`q-${qIdx + 1}`);
+                if (nextCard) {
+                    nextCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        }
+
+        // 결과 산출 및 화면 전환
+        function showResult() {
+            // 점수 초기화 후 계산
+            scores = { EI: 0, SN: 0, TF: 0, JP: 0 };
+            userAnswers.forEach(ans => {
+                if (ans.option === 'A') scores[ans.type]++;
+            });
+
+            // MBTI 문자열 조합 (A 조합이 많으면 앞 글자, 반대면 뒷 글자)
+            // 각 성향별 8문항 중 4문항 이상이면 A성향 선택으로 간주
+            const mbti = [
+                scores.EI >= 4 ? 'E' : 'I',
+                scores.SN >= 4 ? 'S' : 'N',
+                scores.TF >= 4 ? 'T' : 'F',
+                scores.JP >= 4 ? 'J' : 'P'
+            ].join('');
+
+            // 화면 전환
+            document.getElementById('quiz-container').classList.add('hidden');
+            const resultPage = document.getElementById('result-page');
+            resultPage.classList.remove('hidden');
+            resultPage.scrollIntoView({ behavior: 'smooth' });
+
+            // 데이터 바인딩
+            const data = mbtiResults[mbti];
+            document.getElementById('result-emoji').innerText = data.emoji;
+            document.getElementById('result-mbti').innerText = mbti;
+            document.getElementById('result-title').innerText = data.title;
+            document.getElementById('result-desc').innerText = data.desc;
+        }
+    </script>
+</body>
+</html>
+
